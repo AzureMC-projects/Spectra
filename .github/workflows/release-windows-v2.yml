@@ -1,4 +1,4 @@
-name: Build and publish Spectra v0.2.1 for Windows
+name: Build and publish Spectra v2.1 for Windows
 
 on:
   push:
@@ -71,14 +71,14 @@ jobs:
           if (!(Test-Path "build/Release/Spectra.exe")) { throw "Spectra.exe missing" }
           if (!(Test-Path "build/Release/Spectra Simulator.exe")) { throw "Spectra Simulator.exe missing" }
           if (!(Test-Path "build/Release/platforms/qwindows.dll")) { throw "Qt Windows platform plugin missing" }
-          Compress-Archive -Path "build/Release/*" -DestinationPath "Spectra-Windows-v0.2.1.zip" -Force
-          if (!(Test-Path "Spectra-Windows-v0.2.1.zip")) { throw "ZIP package missing" }
+          Compress-Archive -Path "build/Release/*" -DestinationPath "Spectra-Windows-v2.1.zip" -Force
+          if (!(Test-Path "Spectra-Windows-v2.1.zip")) { throw "ZIP package missing" }
 
       - name: Publish GitHub release asset
         if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/v2-development'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2
-          name: Spectra v0.2.1
+          tag_name: v2.1
+          name: Spectra v2.1
           generate_release_notes: true
-          files: Spectra-Windows-v0.2.1.zip
+          files: Spectra-Windows-v2.1.zip
