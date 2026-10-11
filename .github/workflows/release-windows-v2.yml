@@ -1,0 +1,66 @@
+name: Build and publish Spectra v2 for Windows
+
+on:
+  push:
+    tags:
+      - "v2"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Qt 6 with WebEngine
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.3"
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          modules: qtwebengine
+          cache: true
+
+      - name: Configure CMake
+        run: cmake -S . -B build
+
+      - name: Build applications
+        run: cmake --build build --config Release --parallel 2
+
+      - name: Bundle Qt and WebEngine runtime
+        shell: pwsh
+        run: |
+          $apps = @("Spectra.exe", "Spectra Simulator.exe")
+          $deploy = Get-Command windeployqt.exe -ErrorAction Stop
+          foreach ($app in $apps) {
+            $exe = Join-Path $PWD ("build/Release/" + $app)
+            if (!(Test-Path $exe)) { throw "$app was not built at $exe" }
+            & $deploy.Source --release --compiler-runtime $exe
+            if ($LASTEXITCODE -ne 0) { throw "windeployqt failed for $app" }
+          }
+          $simulator = Join-Path $PWD "build/Release/Spectra Simulator.exe"
+          if (!(Test-Path (Join-Path $PWD "build/Release/QtWebEngineProcess.exe"))) {
+            Write-Host "Checking WebEngine deployment; windeployqt should place the helper and resources beside the executable."
+          }
+
+      - name: Verify package
+        shell: pwsh
+        run: |
+          if (!(Test-Path "build/Release/Spectra.exe")) { throw "Spectra.exe missing" }
+          if (!(Test-Path "build/Release/Spectra Simulator.exe")) { throw "Spectra Simulator.exe missing" }
+          Compress-Archive -Path "build/Release/*" -DestinationPath "Spectra-Windows-v2.zip" -Force
+          if (!(Test-Path "Spectra-Windows-v2.zip")) { throw "ZIP package missing" }
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v2
+          name: Spectra v2
+          generate_release_notes: true
+          files: Spectra-Windows-v2.zip
