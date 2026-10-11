@@ -11,3 +11,7 @@ target_link_libraries(Spectra PRIVATE Qt6::Widgets)
 qt_add_executable(SpectraSimulator src/simulator.cpp)
 set_target_properties(SpectraSimulator PROPERTIES OUTPUT_NAME "Spectra Simulator")
 target_link_libraries(SpectraSimulator PRIVATE Qt6::Widgets)
+
+qt_add_executable(SpectraGameStoreImporter src/store_importer.cpp)
+set_target_properties(SpectraGameStoreImporter PROPERTIES OUTPUT_NAME "Spectra Game Store Importer")
+target_link_libraries(SpectraGameStoreImporter PRIVATE Qt6::Widgets)
