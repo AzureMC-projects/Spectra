@@ -1,218 +1,66 @@
 #include <QApplication>
-#include <QDesktopServices>
 #include <QDir>
-#include <QFrame>
-#include <QHBoxLayout>
+#include <QFileInfo>
+#include <QDesktopServices>
+#include <QStandardPaths>
+#include <QMainWindow>
+#include <QWidget>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMainWindow>
 #include <QPushButton>
-#include <QScrollArea>
+#include <QListWidget>
 #include <QStackedWidget>
 #include <QVBoxLayout>
-#include <QWidget>
+#include <QHBoxLayout>
+#include <QGridLayout>
+#include <QMessageBox>
+#include <QPixmap>
+#include <QDateTime>
 #include <QUrl>
+#include <QSettings>
+#include <QTextBrowser>
+#ifdef SPECTRA_WEBENGINE
+#include <QWebEngineView>
+#endif
 
-class SimulatorWindow final : public QMainWindow {
+class Simulator final:public QMainWindow{
 public:
-    SimulatorWindow() {
-        setWindowTitle("Spectra Simulator | Console-style desktop");
-        resize(1280, 800);
-        setMinimumSize(900, 600);
-        setStyleSheet(R"(
-            QMainWindow, QWidget#page { background: #071326; color: #f4f7ff; }
-            QLabel { color: #f4f7ff; }
-            QLabel#muted { color: #a9b9d4; }
-            QLabel#hero { font-size: 30px; font-weight: 700; }
-            QLabel#section { font-size: 19px; font-weight: 600; }
-            QPushButton { color: white; background: #173a68; border: 1px solid #4275b7;
-                          border-radius: 9px; padding: 11px 16px; }
-            QPushButton:hover { background: #24548d; }
-            QPushButton#tile { text-align: left; min-width: 150px; min-height: 125px;
-                               font-size: 17px; font-weight: 600; background: #10294b; }
-            QPushButton#primary { background: #dceaff; color: #092044; border: none; font-weight: 700; }
-            QLineEdit { color: white; background: #10213b; border: 1px solid #375579;
-                        border-radius: 8px; padding: 12px; }
-            QFrame#topbar { background: #0a1b32; border-bottom: 1px solid #25466d; }
-        )");
-
-        auto *central = new QWidget;
-        auto *outer = new QVBoxLayout(central);
-        outer->setContentsMargins(0, 0, 0, 0);
-        outer->setSpacing(0);
-
-        auto *topbar = new QFrame;
-        topbar->setObjectName("topbar");
-        auto *top = new QHBoxLayout(topbar);
-        auto *brand = new QLabel("SPECTRA");
-        brand->setStyleSheet("font-size: 20px; font-weight: 800; letter-spacing: 3px; color: #91c5ff;");
-        top->addWidget(brand);
-        top->addStretch();
-        auto *homeNav = new QPushButton("Home");
-        auto *browserNav = new QPushButton("Browser");
-        auto *storeNav = new QPushButton("Store");
-        top->addWidget(homeNav);
-        top->addWidget(browserNav);
-        top->addWidget(storeNav);
-        outer->addWidget(topbar);
-
-        pages_ = new QStackedWidget;
-        pages_->addWidget(makeHomePage());
-        pages_->addWidget(makeBrowserPage());
-        pages_->addWidget(makeStorePage());
-        outer->addWidget(pages_, 1);
-        setCentralWidget(central);
-
-        connect(homeNav, &QPushButton::clicked, this, [this] { pages_->setCurrentIndex(0); });
-        connect(browserNav, &QPushButton::clicked, this, [this] { pages_->setCurrentIndex(1); });
-        connect(storeNav, &QPushButton::clicked, this, [this] { pages_->setCurrentIndex(2); });
-    }
-
+ Simulator(){setWindowTitle("Spectra Simulator");resize(1360,850);setMinimumSize(980,650);docs_=QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);imports_=QDir(docs_).filePath("Spectra Imports");library_=QDir(docs_).filePath("Spectra Library");QDir().mkpath(imports_);QDir().mkpath(library_);settings_=new QSettings("Spectra","Simulator",this);
+ setStyleSheet("QMainWindow,QWidget#page{background:#080d18;color:#f5f7ff} QLabel{color:#f5f7ff} QLabel#hero{font-size:30px;font-weight:800} QLabel#muted{color:#9eabc3} QFrame#top{background:#101a2b;border-bottom:1px solid #2b3c58} QPushButton{color:white;background:#16243a;border:1px solid #344c70;border-radius:9px;padding:10px 15px} QPushButton:hover{background:#24466f;border-color:#82c8ff} QPushButton#tile{text-align:left;min-width:160px;min-height:110px;font-size:17px;font-weight:700;background:#111f34} QPushButton#primary{background:#d9ecff;color:#07162a;font-weight:800} QLineEdit,QListWidget,QTextBrowser{color:#f5f7ff;background:#0d1828;border:1px solid #2b3c58;padding:8px}");
+ auto *c=new QWidget;auto *v=new QVBoxLayout(c);v->setContentsMargins(0,0,0,0);auto *top=new QWidget;top->setObjectName("top");auto *th=new QHBoxLayout(top);auto *brand=new QLabel("S P E C T R A");brand->setStyleSheet("font-size:21px;font-weight:900;color:#8dcaff");th->addWidget(brand);th->addStretch();th->addWidget(new QLabel(QDateTime::currentDateTime().toString("ddd d MMM  h:mm AP")));v->addWidget(top);
+ auto *nav=new QHBoxLayout;QStringList names={"Home","Library","Browser","Store","Media Gallery","Settings"};for(int i=0;i<names.size();++i){auto *b=new QPushButton(names[i]);nav->addWidget(b);connect(b,&QPushButton::clicked,this,[this,i]{show(i);});}auto *nw=new QWidget;nw->setLayout(nav);v->addWidget(nw);
+ pages_=new QStackedWidget;pages_->addWidget(home());pages_->addWidget(libraryPage());pages_->addWidget(browserPage());pages_->addWidget(storePage());pages_->addWidget(galleryPage());pages_->addWidget(settingsPage());v->addWidget(pages_,1);setCentralWidget(c);show(0);}
 private:
-    QStackedWidget *pages_{};
-
-    QWidget *newPage() {
-        auto *page = new QWidget;
-        page->setObjectName("page");
-        auto *layout = new QVBoxLayout(page);
-        layout->setContentsMargins(38, 30, 38, 30);
-        layout->setSpacing(18);
-        return page;
-    }
-
-    QWidget *makeHomePage() {
-        auto *page = newPage();
-        auto *layout = qobject_cast<QVBoxLayout *>(page->layout());
-        auto *eyebrow = new QLabel("WELCOME BACK");
-        eyebrow->setObjectName("muted");
-        layout->addWidget(eyebrow);
-        auto *hero = new QLabel("Your space. Your library.");
-        hero->setObjectName("hero");
-        layout->addWidget(hero);
-        auto *subtitle = new QLabel("A console-inspired desktop shell for exploring local web content and store links.");
-        subtitle->setObjectName("muted");
-        layout->addWidget(subtitle);
-
-        auto *tiles = new QHBoxLayout;
-        auto *browser = new QPushButton("◉\n\nBrowser\nOpen web pages");
-        browser->setObjectName("tile");
-        auto *store = new QPushButton("▣\n\nStore\nExplore games");
-        store->setObjectName("tile");
-        auto *library = new QPushButton("▤\n\nLocal Library\nChoose a content folder");
-        library->setObjectName("tile");
-        tiles->addWidget(browser);
-        tiles->addWidget(store);
-        tiles->addWidget(library);
-        layout->addLayout(tiles);
-        layout->addSpacing(20);
-        auto *note = new QLabel("SIMULATOR MODE  •  Windows desktop\nThis is a console-inspired interface, not a PlayStation 5 emulator. PS5 games and system software do not run here.");
-        note->setObjectName("muted");
-        note->setWordWrap(true);
-        layout->addWidget(note);
-        layout->addStretch();
-
-        connect(browser, &QPushButton::clicked, this, [this] { pages_->setCurrentIndex(1); });
-        connect(store, &QPushButton::clicked, this, [this] { pages_->setCurrentIndex(2); });
-        connect(library, &QPushButton::clicked, this, [this] {
-            QDesktopServices::openUrl(QUrl::fromLocalFile(QDir::homePath()));
-        });
-        return page;
-    }
-
-    QWidget *makeBrowserPage() {
-        auto *page = newPage();
-        auto *layout = qobject_cast<QVBoxLayout *>(page->layout());
-        auto *hero = new QLabel("Internet Browser");
-        hero->setObjectName("hero");
-        layout->addWidget(hero);
-        auto *hint = new QLabel("Enter a website address. Spectra opens it in your normal Windows browser; this shell does not embed or emulate the PS5 browser.");
-        hint->setObjectName("muted");
-        hint->setWordWrap(true);
-        layout->addWidget(hint);
-
-        auto *addressRow = new QHBoxLayout;
-        auto *address = new QLineEdit("https://www.google.com");
-        address->setPlaceholderText("https://example.com");
-        auto *open = new QPushButton("Open website");
-        open->setObjectName("primary");
-        addressRow->addWidget(address, 1);
-        addressRow->addWidget(open);
-        layout->addLayout(addressRow);
-
-        auto *quickLinks = new QLabel("Quick links");
-        quickLinks->setObjectName("section");
-        layout->addWidget(quickLinks);
-        auto *links = new QHBoxLayout;
-        for (const auto &entry : {qMakePair(QString("PlayStation.com"), QString("https://www.playstation.com/")),
-                                  qMakePair(QString("PlayStation Store"), QString("https://store.playstation.com/")),
-                                  qMakePair(QString("Example page"), QString("https://example.com"))}) {
-            auto *button = new QPushButton(entry.first);
-            links->addWidget(button);
-            connect(button, &QPushButton::clicked, this, [url = entry.second] {
-                QDesktopServices::openUrl(QUrl(url));
-            });
-        }
-        layout->addLayout(links);
-        layout->addStretch();
-        auto openAddress = [address] {
-            QString text = address->text().trimmed();
-            if (text.isEmpty()) return;
-            if (!text.contains("://")) text.prepend("https://");
-            const QUrl url(text);
-            if (url.isValid() && !url.host().isEmpty())
-                QDesktopServices::openUrl(url);
-        };
-        connect(open, &QPushButton::clicked, this, openAddress);
-        connect(address, &QLineEdit::returnPressed, this, openAddress);
-        return page;
-    }
-
-    QWidget *makeStorePage() {
-        auto *page = newPage();
-        auto *layout = qobject_cast<QVBoxLayout *>(page->layout());
-        auto *hero = new QLabel("Store");
-        hero->setObjectName("hero");
-        layout->addWidget(hero);
-        auto *hint = new QLabel("Storefront shortcuts. These open official web pages; this app does not access private store APIs or install console software.");
-        hint->setObjectName("muted");
-        hint->setWordWrap(true);
-        layout->addWidget(hint);
-
-        auto addStoreCard = [layout](const QString &title, const QString &description,
-                                     const QString &buttonText, const QString &url) {
-            auto *card = new QFrame;
-            card->setStyleSheet("QFrame { background: #102441; border: 1px solid #29496f; border-radius: 12px; }");
-            auto *row = new QHBoxLayout(card);
-            auto *copy = new QVBoxLayout;
-            auto *name = new QLabel(title);
-            name->setStyleSheet("font-size: 18px; font-weight: 700;");
-            auto *desc = new QLabel(description);
-            desc->setObjectName("muted");
-            desc->setWordWrap(true);
-            copy->addWidget(name);
-            copy->addWidget(desc);
-            row->addLayout(copy, 1);
-            auto *open = new QPushButton(buttonText);
-            open->setObjectName("primary");
-            row->addWidget(open);
-            QObject::connect(open, &QPushButton::clicked, card, [url] {
-                QDesktopServices::openUrl(QUrl(url));
-            });
-            layout->addWidget(card);
-        };
-
-        addStoreCard("PlayStation Store", "Browse the official PlayStation digital storefront.", "Open Store", "https://store.playstation.com/");
-        addStoreCard("PlayStation Plus", "View subscription information and benefits.", "Learn more", "https://www.playstation.com/ps-plus/");
-        addStoreCard("PlayStation Support", "Official help and support resources.", "Get support", "https://www.playstation.com/support/");
-        layout->addStretch();
-        return page;
-    }
+ QString docs_,imports_,library_;QSettings *settings_{};QStackedWidget *pages_{};QListWidget *lib_{},*gallery_{};QLabel *preview_{};QLineEdit *address_{};
+#ifdef SPECTRA_WEBENGINE
+ QWebEngineView *web_{};
+#endif
+ QWidget* page(){auto*p=new QWidget;p->setObjectName("page");auto*l=new QVBoxLayout(p);l->setContentsMargins(34,26,34,26);l->setSpacing(15);return p;}
+ void show(int i){pages_->setCurrentIndex(i);if(i==1)refreshLib();if(i==4)refreshGallery();
+#ifdef SPECTRA_WEBENGINE
+ if(i==2&&web_->url().isEmpty())web_->setUrl(QUrl("https://www.google.com"));
+#endif
+ }
+ void addTile(QGridLayout*g,QString text,int pageIndex){auto*b=new QPushButton(text);b->setObjectName("tile");g->addWidget(b);connect(b,&QPushButton::clicked,this,[this,pageIndex]{show(pageIndex);});}
+ QWidget*home(){auto*p=page();auto*l=qobject_cast<QVBoxLayout*>(p->layout());auto*ey=new QLabel("WELCOME BACK");ey->setObjectName("muted");l->addWidget(ey);auto*h=new QLabel("Your games. Your media. Your space.");h->setObjectName("hero");l->addWidget(h);auto*s=new QLabel("A polished console-inspired desktop shell.");s->setObjectName("muted");l->addWidget(s);auto*g=new QGridLayout;g->setSpacing(14);addTile(g,"▦   Library\n\nBrowse injected files",1);addTile(g,"◎   Internet Browser\n\nBrowse inside Spectra",2);addTile(g,"▣   Store\n\nOfficial storefront links",3);addTile(g,"▧   Media Gallery\n\nView local photos",4);addTile(g,"⚙   Settings\n\nSimulator preferences",5);auto*imp=new QPushButton("＋   Open imports folder");g->addWidget(imp);connect(imp,&QPushButton::clicked,this,[this]{QDesktopServices::openUrl(QUrl::fromLocalFile(imports_));});l->addLayout(g);l->addStretch();auto*f=new QLabel("SPECTRA SIMULATOR • Windows desktop shell • Not a PS5 emulator");f->setObjectName("muted");l->addWidget(f);return p;}
+ QWidget*libraryPage(){auto*p=page();auto*l=qobject_cast<QVBoxLayout*>(p->layout());auto*h=new QLabel("Library");h->setObjectName("hero");l->addWidget(h);auto*d=new QLabel("Files copied by Spectra appear here. Supported files open using their associated Windows app.");d->setObjectName("muted");d->setWordWrap(true);l->addWidget(d);auto*r=new QHBoxLayout;auto*ref=new QPushButton("Refresh");auto*folder=new QPushButton("Open library folder");r->addWidget(ref);r->addWidget(folder);r->addStretch();l->addLayout(r);lib_=new QListWidget;l->addWidget(lib_,1);auto*open=new QPushButton("Open selected file");open->setObjectName("primary");l->addWidget(open);connect(ref,&QPushButton::clicked,this,[this]{refreshLib();});connect(folder,&QPushButton::clicked,this,[this]{QDesktopServices::openUrl(QUrl::fromLocalFile(library_));});connect(open,&QPushButton::clicked,this,[this]{auto*i=lib_->currentItem();if(!i)return;QString path=i->data(Qt::UserRole).toString();QString ext=QFileInfo(path).suffix().toLower();if(!QStringList({"txt","pdf","png","jpg","jpeg","gif","bmp","webp","html","htm","mp4","mp3","wav","m4v","mov"}).contains(ext)){QMessageBox::information(this,"Unsupported file","Spectra will not execute this file type.");return;}QDesktopServices::openUrl(QUrl::fromLocalFile(path));});refreshLib();return p;}
+ void refreshLib(){if(!lib_)return;lib_->clear();for(auto f:QDir(library_).entryInfoList(QDir::Files|QDir::NoDotAndDotDot,QDir::Name)){auto*i=new QListWidgetItem(f.fileName()+" ("+QString::number(f.size())+" bytes)",lib_);i->setData(Qt::UserRole,f.absoluteFilePath());}}
+ QWidget*browserPage(){auto*p=page();auto*l=qobject_cast<QVBoxLayout*>(p->layout());auto*h=new QLabel("Internet Browser");h->setObjectName("hero");l->addWidget(h);auto*r=new QHBoxLayout;auto*back=new QPushButton("←");auto*forward=new QPushButton("→");auto*reload=new QPushButton("↻");auto*home=new QPushButton("Home");address_=new QLineEdit("https://www.google.com");auto*go=new QPushButton("Go");go->setObjectName("primary");for(auto*b:{back,forward,reload,home})r->addWidget(b);r->addWidget(address_,1);r->addWidget(go);l->addLayout(r);
+#ifdef SPECTRA_WEBENGINE
+ web_=new QWebEngineView;l->addWidget(web_,1);auto navigate=[this]{QString s=address_->text().trimmed();if(s.isEmpty())return;if(!s.contains("://"))s=(s.contains('.')&&!s.contains(' '))?"https://"+s:"https://www.google.com/search?q="+QString(QUrl::toPercentEncoding(s));web_->setUrl(QUrl(s));};connect(go,&QPushButton::clicked,this,navigate);connect(address_,&QLineEdit::returnPressed,this,navigate);connect(back,&QPushButton::clicked,web_,&QWebEngineView::back);connect(forward,&QPushButton::clicked,web_,&QWebEngineView::forward);connect(reload,&QPushButton::clicked,web_,&QWebEngineView::reload);connect(home,&QPushButton::clicked,this,[this]{address_->setText("https://www.google.com");web_->setUrl(QUrl(address_->text()));});connect(web_,&QWebEngineView::urlChanged,this,[this](const QUrl&u){address_->setText(u.toString());});
+#else
+ auto*note=new QTextBrowser;note->setHtml("<h2>Browser module unavailable</h2><p>This build needs Qt WebEngine installed to show real websites inside Spectra.</p>");l->addWidget(note,1);auto*warn=[this]{QMessageBox::information(this,"Browser unavailable","Rebuild with Qt WebEngine installed.");};connect(go,&QPushButton::clicked,this,warn);connect(address_,&QLineEdit::returnPressed,this,warn);connect(back,&QPushButton::clicked,this,warn);connect(forward,&QPushButton::clicked,this,warn);connect(reload,&QPushButton::clicked,this,warn);connect(home,&QPushButton::clicked,this,warn);
+#endif
+ return p;}
+ QWidget*storePage(){auto*p=page();auto*l=qobject_cast<QVBoxLayout*>(p->layout());auto*h=new QLabel("Store");h->setObjectName("hero");l->addWidget(h);auto*n=new QLabel("Official pages open in the simulator browser.");n->setObjectName("muted");l->addWidget(n);QList<QPair<QString,QString>> links={{"PlayStation Store","https://store.playstation.com/"},{"PlayStation Plus","https://www.playstation.com/ps-plus/"},{"PlayStation Support","https://www.playstation.com/support/"}};for(auto e:links){auto*b=new QPushButton(e.first+" →");l->addWidget(b);connect(b,&QPushButton::clicked,this,[this,e]{
+#ifdef SPECTRA_WEBENGINE
+ show(2);address_->setText(e.second);web_->setUrl(QUrl(e.second));
+#else
+ show(2);address_->setText(e.second);
+#endif
+ });}l->addStretch();return p;}
+ QWidget*galleryPage(){auto*p=page();auto*l=qobject_cast<QVBoxLayout*>(p->layout());auto*h=new QLabel("Media Gallery");h->setObjectName("hero");l->addWidget(h);auto*row=new QHBoxLayout;auto*ref=new QPushButton("Refresh");auto*folder=new QPushButton("Open library folder");row->addWidget(ref);row->addWidget(folder);row->addStretch();l->addLayout(row);auto*body=new QHBoxLayout;gallery_=new QListWidget;preview_=new QLabel("Choose an image");preview_->setAlignment(Qt::AlignCenter);preview_->setMinimumSize(300,240);body->addWidget(gallery_,1);body->addWidget(preview_,2);l->addLayout(body,1);connect(ref,&QPushButton::clicked,this,[this]{refreshGallery();});connect(folder,&QPushButton::clicked,this,[this]{QDesktopServices::openUrl(QUrl::fromLocalFile(library_));});connect(gallery_,&QListWidget::currentRowChanged,this,[this](int){auto*i=gallery_->currentItem();if(!i)return;QPixmap pix(i->data(Qt::UserRole).toString());if(!pix.isNull())preview_->setPixmap(pix.scaled(preview_->size(),Qt::KeepAspectRatio,Qt::SmoothTransformation));else preview_->setText("Preview unavailable for this media type. Open it from Library.");});refreshGallery();return p;}
+ void refreshGallery(){if(!gallery_)return;gallery_->clear();QStringList exts={"png","jpg","jpeg","gif","bmp","webp","mp4","mov","m4v","avi","mp3","wav"};for(auto f:QDir(library_).entryInfoList(QDir::Files|QDir::NoDotAndDotDot,QDir::Name))if(exts.contains(f.suffix().toLower())){auto*i=new QListWidgetItem(f.fileName(),gallery_);i->setData(Qt::UserRole,f.absoluteFilePath());}}
+ QWidget*settingsPage(){auto*p=page();auto*l=qobject_cast<QVBoxLayout*>(p->layout());auto*h=new QLabel("Settings");h->setObjectName("hero");l->addWidget(h);auto*d=new QLabel("Local folders and simulator preferences.");d->setObjectName("muted");l->addWidget(d);auto*a=new QPushButton("Open Spectra Imports");auto*b=new QPushButton("Open Spectra Library");auto*c=new QPushButton("Toggle compact mode");l->addWidget(a);l->addWidget(b);l->addWidget(c);connect(a,&QPushButton::clicked,this,[this]{QDesktopServices::openUrl(QUrl::fromLocalFile(imports_));});connect(b,&QPushButton::clicked,this,[this]{QDesktopServices::openUrl(QUrl::fromLocalFile(library_));});connect(c,&QPushButton::clicked,this,[this]{bool val=!settings_->value("compactMode",false).toBool();settings_->setValue("compactMode",val);QMessageBox::information(this,"Saved",val?"Compact mode preference saved.":"Standard spacing preference saved.");});l->addStretch();return p;}
 };
-
-int main(int argc, char *argv[]) {
-    QApplication app(argc, argv);
-    QApplication::setApplicationName("Spectra Simulator");
-    SimulatorWindow window;
-    window.show();
-    return app.exec();
-}
+int main(int argc,char**argv){QApplication a(argc,argv);Simulator w;w.show();return a.exec();}
