@@ -1,42 +1,50 @@
 # Spectra
 
-Spectra is a C++17 / Qt 6 desktop app for copying user-selected files into a destination folder or mounted volume.
+Spectra currently builds two separate Qt 6 desktop applications for Windows and Linux.
 
-## Features
+## Apps
 
-- Select one or more local files and remove entries from the selection.
-- Choose an existing destination folder or select a mounted volume.
-- Validate selected files and destination writability.
-- Copy files into the destination with progress, per-file logging, and a completion summary.
-- Ask before replacing an existing destination file; users can skip it or cancel the copy.
-- Export the timestamped activity log as a text file.
+### Spectra.exe — file utility
 
-Spectra performs ordinary host filesystem copies only. It does not connect to a PS5, jailbreak a console, inject code into a process or console, execute payloads, or bypass platform security. Choosing a mounted drive simply chooses a filesystem destination.
+- Select local files and copy them to a destination folder or mounted volume.
+- Validate readable files and destination writability.
+- Track progress, log file operations, and export the activity log.
+- Ask before replacing existing files.
+
+This app performs normal filesystem operations only.
+
+### Spectra Simulator.exe — console-inspired shell
+
+- A dark blue, console-dashboard-inspired home screen.
+- A Browser page with an address field and quick links. Websites open in the computer's default browser.
+- A Store page with links to the official PlayStation Store, PlayStation Plus, and PlayStation Support websites.
+- A Local Library shortcut to open the user's home folder.
+
+**Important platform note:** the simulator is a Windows desktop UI inspired by a console home screen. It is not a PS5 emulator, does not run PS5 games or PS5 system software, and does not reproduce the PS5's built-in browser. A real PS5-native build requires access to Sony's authorized PlayStation development SDK and hardware; this repository does not currently contain a PS5 target.
+
+The Store page is a set of official web links, not a native PlayStation Store client. The browser opens pages in the default Windows browser rather than embedding a browser engine.
 
 ## Build
 
 Requirements: CMake 3.21+, a C++17 compiler, and Qt 6 Widgets (6.2+).
 
-```sh
-cmake -S . -B build
-cmake --build build --config Release
-```
+    cmake -S . -B build
+    cmake --build build --config Release
 
-Run the resulting `Spectra` executable from the build directory appropriate to your platform.
+The build produces Spectra and Spectra Simulator executables. GitHub Actions builds both applications for Windows and Linux and packages Qt runtime dependencies for Windows.
 
 ## Repository layout
 
-```text
-Spectra/
-├── CMakeLists.txt
-├── LICENSE
-├── README.md
-├── docs/
-│   └── development.md
-└── src/
-    └── main.cpp
-```
+    Spectra/
+    ├── CMakeLists.txt
+    ├── LICENSE
+    ├── README.md
+    ├── docs/
+    │   └── development.md
+    └── src/
+        ├── main.cpp
+        └── simulator.cpp
 
 ## License
 
-Spectra is released under the MIT License. See [LICENSE](LICENSE).
+Spectra is released under the MIT License. See LICENSE.
