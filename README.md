@@ -1,54 +1,47 @@
 # Spectra
 
-Spectra is a C++/Qt desktop research and homebrew-organizing toolkit for PlayStation 5 development research.
+Spectra is a C++17 / Qt 6 desktop toolkit for organizing PS5 homebrew research files and recording a transparent, reproducible review workflow.
 
-> **Current status:** early prototype. Spectra does not currently jailbreak a PS5, inject code into a console, or bypass PlayStation security. No public method is assumed to work on the latest firmware.
+> **Prototype / simulation only:** Spectra does not exploit or jailbreak a PS5, inject code into a console, bypass platform security, or install payloads. The UI can inspect selected files, record a chosen folder or mounted drive, validate readable files, and export an activity log. It does not copy files to a destination or communicate with a console.
 
-## Initial goals
+## Features
 
-- Provide a desktop UI for browsing files and removable drives.
-- Let developers inspect homebrew project files and package metadata before use.
-- Keep an auditable session log of user actions and validation results.
-- Offer a **simulation mode** for testing workflows without modifying a console or deploying exploit payloads.
-- Track firmware research using public, responsibly disclosed sources.
-
-## Safety and scope
-
-The initial release is a host-side organizer and research UI, not a jailbreak injector. It will not exploit the console, bypass platform security, install unauthorized payloads, or claim compatibility with firmware that has not been tested. Any future console-side development should use documented development pathways and devices the developer is authorized to test.
-
-## Proposed structure
-
-```text
-Spectra/
-├── README.md
-├── CMakeLists.txt
-├── LICENSE
-├── docs/
-│   ├── architecture.md
-│   └── development.md
-├── src/
-│   ├── main.cpp
-│   ├── MainWindow.h
-│   └── MainWindow.cpp
-└── tests/
-    └── README.md
-```
-
-## Technology
-
-- C++17 or newer
-- Qt 6 Widgets for the desktop interface
-- CMake for builds
-- Qt logging plus a visible, timestamped activity panel
-
-## First milestone
-
-Build a desktop shell with a file/folder chooser, a removable-drive list, package metadata inspection, a timestamped activity log, and a simulation-only workflow. The UI must clearly distinguish selecting files from installing or executing them.
+- Select one or more local files for review.
+- Choose a destination folder, or select a currently mounted volume from the drive list.
+- Validate that selected paths refer to readable regular files.
+- Record timestamped actions in the on-screen activity log.
+- Export the session log to a text file.
+- Run a simulation that reports what was selected without modifying the destination or a console.
+- Review public firmware/security research without claiming unverified compatibility.
 
 ## Build
 
-A Qt 6 development environment and CMake are required. Build instructions will be added with the first compilable UI prototype.
+Requirements: CMake 3.21+, a C++17 compiler, and Qt 6 Widgets (6.2+).
 
-## Contributions
+```sh
+cmake -S . -B build
+cmake --build build --config Release
+```
 
-Please document tested operating systems, reproducible steps, and limitations. Do not submit exploit payloads, credential theft, malware, or claims of firmware support without verifiable evidence.
+Run the resulting `Spectra` executable from the build directory appropriate to your platform.
+
+## Scope and responsible use
+
+This is a host-side file organizer and research UI, not a jailbreak injector. Selecting a USB drive or storing files on it does not itself jailbreak a PS5. No console exploit, payload execution, security bypass, or unauthorized installation is implemented. Any future console-side work should use documented development pathways and hardware the developer is authorized to test.
+
+## Repository layout
+
+```text
+Spectra/
+├── CMakeLists.txt
+├── LICENSE
+├── README.md
+├── docs/
+│   └── development.md
+└── src/
+    └── main.cpp
+```
+
+## License
+
+Spectra is released under the MIT License. See [LICENSE](LICENSE).
