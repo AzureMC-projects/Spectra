@@ -1,21 +1,17 @@
 cmake_minimum_required(VERSION 3.21)
-project(Spectra VERSION 0.2.0 LANGUAGES CXX)
-
+project(Spectra VERSION 2.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
-
 find_package(Qt6 6.2 REQUIRED COMPONENTS Widgets)
-
-qt_add_executable(Spectra
-    src/main.cpp
-)
+qt_add_executable(Spectra src/main.cpp)
 target_link_libraries(Spectra PRIVATE Qt6::Widgets)
-
-qt_add_executable(SpectraSimulator
-    src/simulator.cpp
-)
+qt_add_executable(SpectraSimulator src/simulator.cpp)
 set_target_properties(SpectraSimulator PROPERTIES OUTPUT_NAME "Spectra Simulator")
 target_link_libraries(SpectraSimulator PRIVATE Qt6::Widgets)
+
+qt_add_executable(SpectraGameStoreImporter src/store_importer.cpp)
+set_target_properties(SpectraGameStoreImporter PROPERTIES OUTPUT_NAME "Spectra Game Store Importer")
+target_link_libraries(SpectraGameStoreImporter PRIVATE Qt6::Widgets)

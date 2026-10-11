@@ -1,0 +1,44 @@
+{
+  "formatVersion": 1,
+  "name": "Spectra Game Store",
+  "kind": "spectra-store-package",
+  "catalogue": [
+    {
+      "id": "neon-drift",
+      "title": "Neon Drift",
+      "category": "Driving",
+      "type": "demo-listing"
+    },
+    {
+      "id": "orbit-foundry",
+      "title": "Orbit Foundry",
+      "category": "Space",
+      "type": "demo-listing"
+    },
+    {
+      "id": "pixel-arena",
+      "title": "Pixel Arena",
+      "category": "Arcade",
+      "type": "demo-listing"
+    },
+    {
+      "id": "blockscape",
+      "title": "Blockscape",
+      "category": "Sandbox",
+      "type": "demo-listing"
+    },
+    {
+      "id": "sim-tools",
+      "title": "Sim Tools",
+      "category": "Tools",
+      "type": "demo-listing"
+    },
+    {
+      "id": "deep-signal",
+      "title": "Deep Signal",
+      "category": "Space",
+      "type": "demo-listing"
+    }
+  ],
+  "note": "Metadata-only demo catalogue. No game binaries are included."
+}
