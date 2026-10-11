@@ -62,9 +62,30 @@ jobs:
       - name: Build Spectra
         run: cmake --build build --config Release --parallel 2
 
-      - name: Upload Windows executable
+      - name: Bundle Qt runtime dependencies
+        shell: pwsh
+        run: |
+          $exe = Join-Path $PWD "build/Release/Spectra.exe"
+          if (!(Test-Path $exe)) {
+            throw "Spectra.exe was not found at $exe"
+          }
+          $qtBin = Join-Path $env:Qt6_DIR "../../bin"
+          $windeployqt = Get-ChildItem -Path $env:Qt6_DIR -Filter windeployqt.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (!$windeployqt) {
+            $windeployqt = Get-ChildItem -Path $env:RUNNER_WORKSPACE -Filter windeployqt.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          }
+          if (!$windeployqt) {
+            throw "Could not locate windeployqt.exe in the installed Qt directory"
+          }
+          & $windeployqt.FullName --release $exe
+          if ($LASTEXITCODE -ne 0) {
+            throw "windeployqt failed with exit code $LASTEXITCODE"
+          }
+          Copy-Item "$env:VCToolsRedistDir" "build/Release/msvc-runtime" -Recurse -ErrorAction SilentlyContinue
+
+      - name: Upload Windows app bundle
         uses: actions/upload-artifact@v4
         with:
           name: spectra-windows
-          path: build/Release/Spectra.exe
+          path: build/Release/
           if-no-files-found: error
