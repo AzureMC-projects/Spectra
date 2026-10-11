@@ -2,7 +2,7 @@ name: Build Spectra
 
 on:
   push:
-    branches: [main]
+    branches: [main, v2-development]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -30,7 +30,7 @@ jobs:
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build both apps
+      - name: Build all apps
         run: cmake --build build --config Release --parallel 2
 
       - name: Upload Linux builds
@@ -68,7 +68,7 @@ jobs:
       - name: Bundle Qt and MSVC runtime dependencies
         shell: pwsh
         run: |
-          $apps = @("Spectra.exe", "Spectra Simulator.exe")
+          $apps = @("Spectra.exe", "Spectra Simulator.exe", "Spectra Game Store Importer.exe")
           $deploy = Get-Command windeployqt.exe -ErrorAction Stop
           foreach ($app in $apps) {
             $exe = Join-Path $PWD ("build/Release/" + $app)
