@@ -18,6 +18,7 @@
 #include <QDateTime>
 #include <QUrl>
 #include <QSettings>
+#include <QHash>
 #include <QTextBrowser>
 
 class Simulator final:public QMainWindow{
