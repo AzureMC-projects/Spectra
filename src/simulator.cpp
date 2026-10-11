@@ -56,7 +56,7 @@ private:
 #ifdef SPECTRA_WEBENGINE
  showPage(2);address_->setText(e.second);web_->setUrl(QUrl(e.second));
 #else
- show(2);address_->setText(e.second);
+ showPage(2);address_->setText(e.second);
 #endif
  });}l->addStretch();return p;}
  QWidget*galleryPage(){auto*p=page();auto*l=qobject_cast<QVBoxLayout*>(p->layout());auto*h=new QLabel("Media Gallery");h->setObjectName("hero");l->addWidget(h);auto*row=new QHBoxLayout;auto*ref=new QPushButton("Refresh");auto*folder=new QPushButton("Open library folder");row->addWidget(ref);row->addWidget(folder);row->addStretch();l->addLayout(row);auto*body=new QHBoxLayout;gallery_=new QListWidget;preview_=new QLabel("Choose an image");preview_->setAlignment(Qt::AlignCenter);preview_->setMinimumSize(300,240);body->addWidget(gallery_,1);body->addWidget(preview_,2);l->addLayout(body,1);connect(ref,&QPushButton::clicked,this,[this]{refreshGallery();});connect(folder,&QPushButton::clicked,this,[this]{QDesktopServices::openUrl(QUrl::fromLocalFile(library_));});connect(gallery_,&QListWidget::currentRowChanged,this,[this](int){auto*i=gallery_->currentItem();if(!i)return;QPixmap pix(i->data(Qt::UserRole).toString());if(!pix.isNull())preview_->setPixmap(pix.scaled(preview_->size(),Qt::KeepAspectRatio,Qt::SmoothTransformation));else preview_->setText("Preview unavailable for this media type. Open it from Library.");});refreshGallery();return p;}
