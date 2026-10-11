@@ -45,11 +45,32 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "windeployqt failed for $app" }
           }
 
+      - name: Configure Qt plugin lookup and verify deployment
+        shell: pwsh
+        run: |
+          $bin = Join-Path $PWD "build/Release"
+          $platformPlugin = Join-Path $bin "platforms/qwindows.dll"
+          if (!(Test-Path $platformPlugin)) {
+            $qtRoot = $env:QT_ROOT_DIR
+            $candidates = @()
+            if ($qtRoot) { $candidates += Join-Path $qtRoot "plugins/platforms/qwindows.dll" }
+            $candidates += Get-ChildItem -Path $env:RUNNER_TEMP -Filter qwindows.dll -Recurse -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName }
+            $source = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+            if (!$source) { throw "Qt Windows platform plugin qwindows.dll was not found after windeployqt." }
+            New-Item -ItemType Directory -Force -Path (Split-Path $platformPlugin) | Out-Null
+            Copy-Item $source $platformPlugin -Force
+          }
+          # Explicitly tell Qt to find the platform plugin relative to the executable.
+          Set-Content -Path (Join-Path $bin "qt.conf") -Value "[Paths]`nPlugins=." -Encoding ascii
+          if (!(Test-Path (Join-Path $bin "platforms/qwindows.dll"))) { throw "platforms/qwindows.dll missing from bundle" }
+          if (!(Test-Path (Join-Path $bin "qt.conf"))) { throw "qt.conf missing from bundle" }
+
       - name: Verify and package applications
         shell: pwsh
         run: |
           if (!(Test-Path "build/Release/Spectra.exe")) { throw "Spectra.exe missing" }
           if (!(Test-Path "build/Release/Spectra Simulator.exe")) { throw "Spectra Simulator.exe missing" }
+          if (!(Test-Path "build/Release/platforms/qwindows.dll")) { throw "Qt Windows platform plugin missing" }
           Compress-Archive -Path "build/Release/*" -DestinationPath "Spectra-Windows-v2.zip" -Force
           if (!(Test-Path "Spectra-Windows-v2.zip")) { throw "ZIP package missing" }
 
