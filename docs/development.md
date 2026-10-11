@@ -17,21 +17,22 @@ cmake --build build --config Release
 
 Run the generated `Spectra` executable from the build directory (the exact path depends on your operating system and generator).
 
-## Prototype behavior
+## Current behavior
 
-The current desktop shell can:
+The desktop app can:
 
-- Select local files for inspection.
-- Select a folder or mounted USB volume as a recorded destination.
-- Check whether selected files exist and are readable.
-- Show timestamped activity messages in the UI.
+- Select local files and remove selected entries.
+- Choose an existing destination folder or mounted volume.
+- Validate source files and destination writability.
+- Copy selected files to the chosen destination, showing progress and timestamped log entries.
+- Prompt before replacing an existing file, with options to replace, skip, or cancel.
+- Export the activity log as a text file.
 
-The current prototype deliberately does **not** copy files, execute payloads, communicate with a PS5, modify console storage, or exploit/bypass firmware security. Destination selection is informational only.
+Copying is a normal filesystem operation on the host computer or a mounted volume. Spectra does not connect to a PS5, inject code into a process or console, execute payloads, or bypass console security.
 
-## Next engineering tasks
+## Engineering notes
 
-1. Add unit tests for file metadata validation and log formatting.
-2. Add removable-volume discovery with clear platform-specific permissions and labels.
-3. Add a package manifest format and display hashes before any optional export workflow is designed.
-4. Add persistent, user-controlled logs with rotation and a clear-data option.
-5. Test the interface on Windows, macOS, and Linux; document which operating systems are supported.
+- File names are preserved when copying into the destination.
+- Existing destination files are never replaced without explicit confirmation.
+- Copy errors and skipped files are recorded in the activity log.
+- Test on Windows, macOS, and Linux; document platform-specific behavior as it is verified.
