@@ -2,333 +2,50 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
-#include <QFileDialog>
 #include <QFileInfo>
+#include <QDesktopServices>
+#include <QFileDialog>
 #include <QLabel>
 #include <QListWidget>
 #include <QMainWindow>
 #include <QPushButton>
-#include <QStorageInfo>
 #include <QTextEdit>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QComboBox>
 #include <QMessageBox>
 #include <QProgressBar>
+#include <QStandardPaths>
 #include <QWidget>
+#include <QUrl>
 
 class SpectraWindow final : public QMainWindow {
 public:
-    SpectraWindow() {
-        setWindowTitle("Spectra | File Copier");
-        resize(1000, 720);
-
-        auto *root = new QWidget(this);
-        auto *layout = new QVBoxLayout(root);
-        auto *intro = new QLabel(
-            "<h2>Spectra</h2><p>Choose files and copy them to a folder you control.</p>"
-            "<p>Copies are ordinary filesystem operations on this computer or a mounted drive. "
-            "Spectra does not connect to, jailbreak, or inject code into a console.</p>");
-        intro->setWordWrap(true);
-        layout->addWidget(intro);
-
-        auto *actions = new QHBoxLayout;
-        auto *chooseFiles = new QPushButton("Select files…");
-        auto *removeFiles = new QPushButton("Remove selected");
-        auto *chooseFolder = new QPushButton("Choose destination…");
-        auto *refreshDrives = new QPushButton("Refresh drives");
-        actions->addWidget(chooseFiles);
-        actions->addWidget(removeFiles);
-        actions->addWidget(chooseFolder);
-        actions->addWidget(refreshDrives);
-        layout->addLayout(actions);
-
-        auto *driveRow = new QHBoxLayout;
-        driveRow->addWidget(new QLabel("Mounted volumes:"));
-        drives_ = new QComboBox;
-        drives_->setMinimumWidth(360);
-        auto *useDrive = new QPushButton("Use selected volume");
-        driveRow->addWidget(drives_, 1);
-        driveRow->addWidget(useDrive);
-        layout->addLayout(driveRow);
-
-        layout->addWidget(new QLabel("Files to copy"));
-        files_ = new QListWidget;
-        files_->setSelectionMode(QAbstractItemView::ExtendedSelection);
-        layout->addWidget(files_, 2);
-
-        destination_ = new QLabel("No destination folder selected");
-        destination_->setWordWrap(true);
-        destination_->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        layout->addWidget(destination_);
-
-        auto *workflow = new QHBoxLayout;
-        auto *validate = new QPushButton("Validate selection");
-        auto *copy = new QPushButton("Copy files");
-        auto *exportLog = new QPushButton("Export activity log…");
-        workflow->addWidget(validate);
-        workflow->addWidget(copy);
-        workflow->addWidget(exportLog);
-        layout->addLayout(workflow);
-
-        progress_ = new QProgressBar;
-        progress_->setRange(0, 100);
-        progress_->setValue(0);
-        progress_->setFormat("%p%");
-        layout->addWidget(progress_);
-
-        layout->addWidget(new QLabel("Activity log"));
-        log_ = new QTextEdit;
-        log_->setReadOnly(true);
-        layout->addWidget(log_, 2);
-
-        setCentralWidget(root);
-        connect(chooseFiles, &QPushButton::clicked, this, [this] { selectFiles(); });
-        connect(removeFiles, &QPushButton::clicked, this, [this] { removeSelectedFiles(); });
-        connect(chooseFolder, &QPushButton::clicked, this, [this] { selectDestination(); });
-        connect(refreshDrives, &QPushButton::clicked, this, [this] { refreshVolumes(); });
-        connect(useDrive, &QPushButton::clicked, this, [this] { useSelectedVolume(); });
-        connect(validate, &QPushButton::clicked, this, [this] { validateSelection(); });
-        connect(copy, &QPushButton::clicked, this, [this] { copyFiles(); });
-        connect(exportLog, &QPushButton::clicked, this, [this] { exportActivityLog(); });
-
-        refreshVolumes();
-        logEvent("Spectra started. File copying is limited to the selected destination folder.");
-    }
-
+ SpectraWindow() {
+  setWindowTitle("Spectra | Inject Files"); resize(1000,720);
+  imports_=QDir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)).filePath("Spectra Imports");
+  library_=QDir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)).filePath("Spectra Library");
+  QDir().mkpath(imports_); QDir().mkpath(library_); dest_=library_;
+  auto *root=new QWidget; auto *v=new QVBoxLayout(root);
+  auto *intro=new QLabel("<h2>SPECTRA / FILE INJECTOR</h2><p>Put files in <b>Documents/Spectra Imports</b>. Files are discovered automatically.</p><p><b>Inject</b> copies checked files into your local Spectra Library. This is ordinary file copying, not console jailbreaking or code injection.</p>"); intro->setWordWrap(true); v->addWidget(intro);
+  auto *row=new QHBoxLayout; auto *open=new QPushButton("Open imports folder"); auto *scan=new QPushButton("Rescan"); auto *all=new QPushButton("Select all"); auto *none=new QPushButton("Select none");
+  for(auto *b:{open,scan,all,none})row->addWidget(b); v->addLayout(row);
+  v->addWidget(new QLabel("DISCOVERED FILES — tick files to inject")); files_=new QListWidget; files_->setSelectionMode(QAbstractItemView::NoSelection); v->addWidget(files_,2);
+  auto *destrow=new QHBoxLayout; destLabel_=new QLabel(dest_); destLabel_->setWordWrap(true); auto *change=new QPushButton("Change destination"); destrow->addWidget(new QLabel("Destination:"));destrow->addWidget(destLabel_,1);destrow->addWidget(change);v->addLayout(destrow);
+  auto *inject=new QPushButton("INJECT SELECTED FILES");inject->setObjectName("primary");v->addWidget(inject);
+  progress_=new QProgressBar;v->addWidget(progress_);v->addWidget(new QLabel("Activity log"));log_=new QTextEdit;log_->setReadOnly(true);v->addWidget(log_,1);
+  setStyleSheet("QMainWindow,QWidget{background:#0b1424;color:#edf4ff} QLabel{color:#edf4ff} QPushButton{background:#173a68;color:white;border:1px solid #4275b7;border-radius:8px;padding:10px} QPushButton#primary{background:#c8e2ff;color:#092044;font-weight:800} QListWidget,QTextEdit{background:#101f35;color:#edf4ff;border:1px solid #29496f}");
+  setCentralWidget(root);
+  connect(open,&QPushButton::clicked,this,[this]{QDesktopServices::openUrl(QUrl::fromLocalFile(imports_));});
+  connect(scan,&QPushButton::clicked,this,[this]{scanFiles();});
+  connect(all,&QPushButton::clicked,this,[this]{checkAll(true);});connect(none,&QPushButton::clicked,this,[this]{checkAll(false);});
+  connect(change,&QPushButton::clicked,this,[this]{QString p=QFileDialog::getExistingDirectory(this,"Choose destination",dest_);if(!p.isEmpty()){dest_=p;destLabel_->setText(p);}});
+  connect(inject,&QPushButton::clicked,this,[this]{injectFiles();});scanFiles();
+ }
 private:
-    QListWidget *files_{};
-    QTextEdit *log_{};
-    QLabel *destination_{};
-    QComboBox *drives_{};
-    QProgressBar *progress_{};
-    QStringList selectedFiles_;
-    QString destinationPath_;
-
-    void logEvent(const QString &message) {
-        const auto timestamp = QDateTime::currentDateTime().toString(Qt::ISODateWithMs);
-        log_->append(QString("[%1] %2").arg(timestamp, message.toHtmlEscaped()));
-    }
-
-    void selectFiles() {
-        const auto paths = QFileDialog::getOpenFileNames(
-            this, "Select files to copy", QDir::homePath(), "All files (*)");
-        if (paths.isEmpty()) {
-            logEvent("File selection cancelled.");
-            return;
-        }
-        int added = 0;
-        for (const auto &path : paths) {
-            if (!selectedFiles_.contains(path)) {
-                selectedFiles_.append(path);
-                files_->addItem(path);
-                ++added;
-            }
-        }
-        logEvent(QString("Added %1 new file(s).").arg(added));
-    }
-
-    void removeSelectedFiles() {
-        const auto selected = files_->selectedItems();
-        for (auto *item : selected) {
-            selectedFiles_.removeAll(item->text());
-            delete item;
-        }
-        logEvent(QString("Removed %1 selected file entry/entries.").arg(selected.size()));
-    }
-
-    void refreshVolumes() {
-        drives_->clear();
-        const auto volumes = QStorageInfo::mountedVolumes();
-        for (const auto &volume : volumes) {
-            if (!volume.isValid() || !volume.isReady())
-                continue;
-            const QString label = QString("%1 — %2 (%3 bytes free)")
-                .arg(volume.displayName().isEmpty() ? QString("Mounted volume") : volume.displayName(),
-                     volume.rootPath(),
-                     QString::number(volume.bytesAvailable()));
-            drives_->addItem(label, volume.rootPath());
-        }
-        logEvent(QString("Mounted-volume list refreshed: %1 available volume(s).").arg(drives_->count()));
-    }
-
-    void setDestination(const QString &path) {
-        destinationPath_ = QDir::cleanPath(path);
-        destination_->setText("Selected destination: " + destinationPath_);
-        logEvent("Destination selected: " + destinationPath_);
-    }
-
-    void useSelectedVolume() {
-        if (drives_->currentIndex() < 0) {
-            logEvent("No mounted volume is available to select.");
-            return;
-        }
-        setDestination(drives_->currentData().toString());
-    }
-
-    void selectDestination() {
-        const auto path = QFileDialog::getExistingDirectory(
-            this, "Choose destination folder", destinationPath_.isEmpty() ? QDir::homePath() : destinationPath_);
-        if (path.isEmpty()) {
-            logEvent("Destination folder selection cancelled.");
-            return;
-        }
-        setDestination(path);
-    }
-
-    int readableFileCount() {
-        int validCount = 0;
-        for (const auto &path : selectedFiles_) {
-            const QFileInfo info(path);
-            if (info.exists() && info.isFile() && info.isReadable()) {
-                ++validCount;
-            } else {
-                logEvent("Warning: missing, unreadable, or non-regular file: " + path);
-            }
-        }
-        return validCount;
-    }
-
-    void validateSelection() {
-        const int validCount = readableFileCount();
-        logEvent(QString("Validation result: %1 of %2 selected file(s) are readable regular files.")
-                     .arg(validCount).arg(selectedFiles_.size()));
-        if (destinationPath_.isEmpty()) {
-            logEvent("Choose a destination folder before copying.");
-        } else {
-            const QFileInfo destInfo(destinationPath_);
-            logEvent(destInfo.isDir() && destInfo.isWritable()
-                ? "Destination exists and is writable."
-                : "Warning: destination is missing, is not a folder, or is not writable.");
-        }
-    }
-
-    void copyFiles() {
-        if (selectedFiles_.isEmpty()) {
-            QMessageBox::information(this, "Nothing to copy", "Select one or more files first.");
-            return;
-        }
-        if (destinationPath_.isEmpty()) {
-            QMessageBox::warning(this, "Destination required", "Choose a destination folder first.");
-            return;
-        }
-
-        const QFileInfo destInfo(destinationPath_);
-        if (!destInfo.exists() || !destInfo.isDir() || !destInfo.isWritable()) {
-            QMessageBox::warning(this, "Invalid destination",
-                "The destination must be an existing, writable folder.");
-            logEvent("Copy cancelled: destination is missing or not writable.");
-            return;
-        }
-
-        const int answer = QMessageBox::question(
-            this, "Confirm file copy",
-            QString("Copy %1 selected file(s) into:\n%2\n\nExisting files may prompt before being replaced.")
-                .arg(selectedFiles_.size()).arg(destinationPath_),
-            QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel);
-        if (answer != QMessageBox::Yes) {
-            logEvent("Copy cancelled by user.");
-            return;
-        }
-
-        int copied = 0;
-        int skipped = 0;
-        int failed = 0;
-        progress_->setRange(0, selectedFiles_.size());
-        progress_->setValue(0);
-
-        for (int i = 0; i < selectedFiles_.size(); ++i) {
-            const QString sourcePath = selectedFiles_.at(i);
-            const QFileInfo sourceInfo(sourcePath);
-            if (!sourceInfo.exists() || !sourceInfo.isFile() || !sourceInfo.isReadable()) {
-                logEvent("Skipped invalid or unreadable source: " + sourcePath);
-                ++skipped;
-                progress_->setValue(i + 1);
-                QApplication::processEvents();
-                continue;
-            }
-
-            const QString targetPath = QDir(destinationPath_).filePath(sourceInfo.fileName());
-            const QString canonicalSource = sourceInfo.canonicalFilePath();
-            const QString canonicalTarget = QFileInfo(targetPath).canonicalFilePath();
-            if (!canonicalSource.isEmpty() && canonicalSource == canonicalTarget) {
-                logEvent("Skipped file because source and destination are the same: " + sourcePath);
-                ++skipped;
-                progress_->setValue(i + 1);
-                QApplication::processEvents();
-                continue;
-            }
-
-            if (QFileInfo::exists(targetPath)) {
-                const auto overwrite = QMessageBox::question(
-                    this, "File already exists",
-                    QString("A file named %1 already exists in the destination. Replace it?")
-                        .arg(sourceInfo.fileName()),
-                    QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::No);
-                if (overwrite == QMessageBox::Cancel) {
-                    logEvent("Copy stopped by user.");
-                    skipped += selectedFiles_.size() - i;
-                    break;
-                }
-                if (overwrite != QMessageBox::Yes) {
-                    logEvent("Skipped existing destination file: " + targetPath);
-                    ++skipped;
-                    progress_->setValue(i + 1);
-                    QApplication::processEvents();
-                    continue;
-                }
-                if (!QFile::remove(targetPath)) {
-                    logEvent("Failed to replace existing file (could not remove it): " + targetPath);
-                    ++failed;
-                    progress_->setValue(i + 1);
-                    QApplication::processEvents();
-                    continue;
-                }
-            }
-
-            if (QFile::copy(sourcePath, targetPath)) {
-                logEvent("Copied: " + sourcePath + " → " + targetPath);
-                ++copied;
-            } else {
-                logEvent("Copy failed: " + sourcePath + " → " + targetPath
-                         + " (" + QFile(sourcePath).errorString() + ")");
-                ++failed;
-            }
-            progress_->setValue(i + 1);
-            QApplication::processEvents();
-        }
-
-        logEvent(QString("Copy finished. Copied: %1; skipped: %2; failed: %3.")
-                     .arg(copied).arg(skipped).arg(failed));
-        QMessageBox::information(this, "Copy complete",
-            QString("Copied: %1\nSkipped: %2\nFailed: %3\n\nDestination:\n%4")
-                .arg(copied).arg(skipped).arg(failed).arg(destinationPath_));
-    }
-
-    void exportActivityLog() {
-        const auto path = QFileDialog::getSaveFileName(
-            this, "Export activity log", QDir::home().filePath("spectra-activity-log.txt"),
-            "Text files (*.txt);;All files (*)");
-        if (path.isEmpty()) {
-            logEvent("Activity-log export cancelled.");
-            return;
-        }
-        QFile file(path);
-        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-            logEvent("Error: could not write activity log to " + path);
-            QMessageBox::warning(this, "Export failed", "Could not open the chosen file for writing.");
-            return;
-        }
-        file.write(log_->toPlainText().toUtf8());
-        file.close();
-        logEvent("Activity log exported to: " + path);
-    }
+ QListWidget *files_{}; QTextEdit *log_{}; QLabel *destLabel_{}; QProgressBar *progress_{}; QString imports_,library_,dest_;
+ void event(QString s){log_->append("["+QDateTime::currentDateTime().toString("hh:mm:ss")+"] "+s.toHtmlEscaped());}
+ void scanFiles(){files_->clear();QDir d(imports_);auto list=d.entryInfoList(QDir::Files|QDir::NoDotAndDotDot,QDir::Name);for(auto f:list){auto *i=new QListWidgetItem(f.fileName()+" ("+QString::number(f.size())+" bytes)",files_);i->setData(Qt::UserRole,f.absoluteFilePath());i->setFlags(i->flags()|Qt::ItemIsUserCheckable);i->setCheckState(Qt::Checked);}event("Found "+QString::number(list.size())+" files in "+imports_);}
+ void checkAll(bool b){for(int i=0;i<files_->count();++i)files_->item(i)->setCheckState(b?Qt::Checked:Qt::Unchecked);}
+ void injectFiles(){QStringList paths;for(int i=0;i<files_->count();++i)if(files_->item(i)->checkState()==Qt::Checked)paths<<files_->item(i)->data(Qt::UserRole).toString();if(paths.isEmpty()){QMessageBox::information(this,"No files","Add files to Documents/Spectra Imports and press Rescan.");return;}if(!QFileInfo(dest_).isDir()||!QFileInfo(dest_).isWritable()){QMessageBox::warning(this,"Invalid destination","Choose an existing writable folder.");return;}if(QMessageBox::question(this,"Confirm Inject","Copy "+QString::number(paths.size())+" file(s) into:\n"+dest_+"\nExisting files will be skipped.",QMessageBox::Yes|QMessageBox::Cancel,QMessageBox::Cancel)!=QMessageBox::Yes)return;int ok=0,skip=0,fail=0;progress_->setRange(0,paths.size());for(int n=0;n<paths.size();++n){QFileInfo f(paths[n]);QString target=QDir(dest_).filePath(f.fileName());if(!f.isFile()||!f.isReadable()||QFileInfo::exists(target)){++skip;event("Skipped "+f.fileName());}else if(QFile::copy(paths[n],target)){++ok;event("Injected (copied): "+f.fileName());}else{++fail;event("Failed: "+f.fileName());}progress_->setValue(n+1);QApplication::processEvents();}event(QString("Done: copied %1, skipped %2, failed %3").arg(ok).arg(skip).arg(fail));QMessageBox::information(this,"Inject complete",QString("Copied: %1\nSkipped: %2\nFailed: %3\n\n%4").arg(ok).arg(skip).arg(fail).arg(dest_));}
 };
-
-int main(int argc, char *argv[]) {
-    QApplication app(argc, argv);
-    QApplication::setApplicationName("Spectra");
-    SpectraWindow window;
-    window.show();
-    return app.exec();
-}
+int main(int argc,char **argv){QApplication a(argc,argv);SpectraWindow w;w.show();return a.exec();}
