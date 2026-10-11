@@ -27,24 +27,24 @@ jobs:
       - name: Install host toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y             clang-18 clang-format-18 clang-tidy-18 lld-18             curl git make ninja-build ccache pkg-config             python3 python3-pip python3-venv tar wget unzip
+          sudo apt-get install -y clang-18 clang-format-18 clang-tidy-18 lld-18 curl git make ninja-build ccache pkg-config python3 python3-pip python3-venv tar wget unzip
 
       - name: Check out pinned PS5 native-app toolchain
         run: |
-          git clone https://github.com/blackbearreloaded/ps5-native-app-boilerplate.git ../ps5-native-app-boilerplate
-          git -C ../ps5-native-app-boilerplate checkout 4f531c4b517f80bcb6b1267135848168d2250047
+          git clone https://github.com/blackbearreloaded/ps5-native-app-boilerplate.git build/ps5-native-app-boilerplate
+          git -C build/ps5-native-app-boilerplate checkout 4f531c4b517f80bcb6b1267135848168d2250047
 
       - name: Install Spectra native screen
         run: |
-          cp ps5/src/main.cpp ../ps5-native-app-boilerplate/src/main.cpp
-          cp ps5/assets/banner.txt ../ps5-native-app-boilerplate/assets/banner.txt
+          cp ps5/src/main.cpp build/ps5-native-app-boilerplate/src/main.cpp
+          cp ps5/assets/banner.txt build/ps5-native-app-boilerplate/assets/banner.txt
 
       - name: Configure title identity
-        working-directory: ../ps5-native-app-boilerplate
+        working-directory: build/ps5-native-app-boilerplate
         run: make init TITLE_ID=PPSA94721 APP_NAME="Spectra PS5"
 
       - name: Build native title folder
-        working-directory: ../ps5-native-app-boilerplate
+        working-directory: build/ps5-native-app-boilerplate
         run: make BUILD_JOBS=2
 
       - name: Upload development artifact
@@ -52,7 +52,7 @@ jobs:
         with:
           name: spectra-ps5-native-dev
           path: |
-            ../ps5-native-app-boilerplate/dist/PPSA94721/
-            ../ps5-native-app-boilerplate/dist/PPSA94721.zip
+            build/ps5-native-app-boilerplate/dist/PPSA94721/
+            build/ps5-native-app-boilerplate/dist/PPSA94721.zip
           if-no-files-found: error
           retention-days: 14
