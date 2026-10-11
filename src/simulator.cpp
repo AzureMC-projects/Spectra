@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QDesktopServices>
+#include <QDir>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
