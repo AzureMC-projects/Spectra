@@ -42,7 +42,7 @@ jobs:
           foreach ($app in $apps) {
             $exe = Join-Path $PWD ("build/Release/" + $app)
             if (!(Test-Path $exe)) { throw "$app was not built at $exe" }
-            if ($app -eq "Spectra Simulator.exe") { & $deploy.Source --release --compiler-runtime --webengine $exe } else { & $deploy.Source --release --compiler-runtime $exe }
+            & $deploy.Source --release --compiler-runtime $exe
             if ($LASTEXITCODE -ne 0) { throw "windeployqt failed for $app" }
           }
           if (!(Test-Path "build/Release/QtWebEngineProcess.exe")) {
