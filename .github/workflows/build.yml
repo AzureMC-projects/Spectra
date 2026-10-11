@@ -30,18 +30,20 @@ jobs:
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build Spectra
+      - name: Build both apps
         run: cmake --build build --config Release --parallel 2
 
-      - name: Upload Linux build
+      - name: Upload Linux builds
         uses: actions/upload-artifact@v4
         with:
           name: spectra-linux
-          path: build/Spectra
-          if-no-files-found: error
+          path: |
+            build/Spectra
+            build/Spectra Simulator
+          if-no-files-found: warn
 
   build-windows:
-    name: Build Windows EXE
+    name: Build Windows EXEs
     runs-on: windows-latest
     steps:
       - name: Check out repository
@@ -59,20 +61,23 @@ jobs:
       - name: Configure CMake
         run: cmake -S . -B build
 
-      - name: Build Spectra
+      - name: Build both apps
         run: cmake --build build --config Release --parallel 2
 
       - name: Bundle Qt and MSVC runtime dependencies
         shell: pwsh
         run: |
-          $exe = Join-Path $PWD "build/Release/Spectra.exe"
-          if (!(Test-Path $exe)) {
-            throw "Spectra.exe was not found at $exe"
-          }
+          $apps = @("Spectra.exe", "Spectra Simulator.exe")
           $deploy = Get-Command windeployqt.exe -ErrorAction Stop
-          & $deploy.Source --release --compiler-runtime $exe
-          if ($LASTEXITCODE -ne 0) {
-            throw "windeployqt failed with exit code $LASTEXITCODE"
+          foreach ($app in $apps) {
+            $exe = Join-Path $PWD ("build/Release/" + $app)
+            if (!(Test-Path $exe)) {
+              throw "$app was not found at $exe"
+            }
+            & $deploy.Source --release --compiler-runtime $exe
+            if ($LASTEXITCODE -ne 0) {
+              throw "windeployqt failed for $app with exit code $LASTEXITCODE"
+            }
           }
 
       - name: Upload Windows app bundle
