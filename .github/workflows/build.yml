@@ -1,0 +1,41 @@
+name: Build Spectra
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build on Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Qt 6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.6.3'
+          host: linux
+          target: desktop
+          arch: gcc_64
+          cache: true
+
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Spectra
+        run: cmake --build build --config Release --parallel 2
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spectra-ubuntu-release
+          path: build/Spectra
+          if-no-files-found: error
