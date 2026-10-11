@@ -21,24 +21,24 @@
 class SpectraWindow final : public QMainWindow {
 public:
  SpectraWindow() {
-  setWindowTitle("Spectra | File Installer v0.2.1"); resize(1000,720);
+  setWindowTitle("Spectra | File Installer v2.1"); resize(1000,720);
   imports_=QDir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)).filePath("Spectra Imports");
   library_=QDir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)).filePath("Spectra Library");
-  QDir().mkpath(imports_); QDir().mkpath(library_); dest_=QDir(library_).filePath("v0.2.1"); QDir().mkpath(dest_);
+  QDir().mkpath(imports_); QDir().mkpath(library_); dest_=QDir(library_).filePath("v2.1"); QDir().mkpath(dest_);
   auto *root=new QWidget; auto *v=new QVBoxLayout(root);
   auto *intro=new QLabel("<h2>SPECTRA / FILE INJECTOR</h2><p>Put files in <b>Documents/Spectra Imports</b>. Files are discovered automatically.</p><p><b>Inject</b> copies checked files into your local Spectra Library. This is ordinary file copying, not console jailbreaking or code injection.</p>"); intro->setWordWrap(true); v->addWidget(intro);
   auto *row=new QHBoxLayout; auto *open=new QPushButton("Open imports folder"); auto *scan=new QPushButton("Rescan"); auto *all=new QPushButton("Select all"); auto *none=new QPushButton("Select none");
   for(auto *b:{open,scan,all,none})row->addWidget(b); v->addLayout(row);
   v->addWidget(new QLabel("DISCOVERED FILES — detected files are preselected")); files_=new QListWidget; files_->setSelectionMode(QAbstractItemView::NoSelection); v->addWidget(files_,2);
   auto *destrow=new QHBoxLayout; destLabel_=new QLabel(dest_); destLabel_->setWordWrap(true); auto *change=new QPushButton("Change destination"); destrow->addWidget(new QLabel("Destination:"));destrow->addWidget(destLabel_,1);destrow->addWidget(change);v->addLayout(destrow);
-  auto *inject=new QPushButton("INSTALL FILES TO v0.2.1");inject->setObjectName("primary");v->addWidget(inject);
+  auto *inject=new QPushButton("INSTALL FILES TO v2.1");inject->setObjectName("primary");v->addWidget(inject);
   progress_=new QProgressBar;v->addWidget(progress_);v->addWidget(new QLabel("Activity log"));log_=new QTextEdit;log_->setReadOnly(true);v->addWidget(log_,1);
   setStyleSheet("QMainWindow,QWidget{background:#0b1424;color:#edf4ff} QLabel{color:#edf4ff} QPushButton{background:#173a68;color:white;border:1px solid #4275b7;border-radius:8px;padding:10px} QPushButton#primary{background:#c8e2ff;color:#092044;font-weight:800} QListWidget,QTextEdit{background:#101f35;color:#edf4ff;border:1px solid #29496f}");
   setCentralWidget(root);
   connect(open,&QPushButton::clicked,this,[this]{QDesktopServices::openUrl(QUrl::fromLocalFile(imports_));});
   connect(scan,&QPushButton::clicked,this,[this]{scanFiles();});
   connect(all,&QPushButton::clicked,this,[this]{checkAll(true);});connect(none,&QPushButton::clicked,this,[this]{checkAll(false);});
-  connect(change,&QPushButton::clicked,this,[this]{QString p=QFileDialog::getExistingDirectory(this,"Choose destination (default: Spectra Library/v0.2.1)",dest_);if(!p.isEmpty()){dest_=p;destLabel_->setText(p);}});
+  connect(change,&QPushButton::clicked,this,[this]{QString p=QFileDialog::getExistingDirectory(this,"Choose destination (default: Spectra Library/v2.1)",dest_);if(!p.isEmpty()){dest_=p;destLabel_->setText(p);}});
   connect(inject,&QPushButton::clicked,this,[this]{injectFiles();});scanFiles();
  }
 private:
