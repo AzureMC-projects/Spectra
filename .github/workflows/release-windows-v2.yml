@@ -18,14 +18,13 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Install Qt 6 with WebEngine
+      - name: Install Qt 6
         uses: jurplel/install-qt-action@v4
         with:
           version: "6.8.3"
           host: windows
           target: desktop
           arch: win64_msvc2022_64
-          modules: qtwebengine qtwebchannel
           cache: true
 
       - name: Configure CMake
@@ -34,7 +33,7 @@ jobs:
       - name: Build applications
         run: cmake --build build --config Release --parallel 2
 
-      - name: Bundle Qt and WebEngine runtime
+      - name: Bundle Qt runtime
         shell: pwsh
         run: |
           $apps = @("Spectra.exe", "Spectra Simulator.exe")
@@ -44,9 +43,6 @@ jobs:
             if (!(Test-Path $exe)) { throw "$app was not built at $exe" }
             & $deploy.Source --release --compiler-runtime $exe
             if ($LASTEXITCODE -ne 0) { throw "windeployqt failed for $app" }
-          }
-          if (!(Test-Path "build/Release/QtWebEngineProcess.exe")) {
-            throw "QtWebEngineProcess.exe was not deployed; embedded browser runtime is incomplete."
           }
 
       - name: Verify and package applications
