@@ -48,12 +48,16 @@ jobs:
         working-directory: build/ps5-native-app-boilerplate
         run: make BUILD_JOBS=2 HOST_CXX=clang++-18
 
+      - name: Verify native build outputs
+        run: |
+          test -d build/ps5-native-app-boilerplate/dist/PPSA94721
+          test -f build/ps5-native-app-boilerplate/dist/PPSA94721.zip
+          ls -lah build/ps5-native-app-boilerplate/dist
+
       - name: Upload development artifact
         uses: actions/upload-artifact@v4
         with:
           name: spectra-ps5-native-dev
-          path: |
-            build/ps5-native-app-boilerplate/dist/PPSA94721/
-            build/ps5-native-app-boilerplate/dist/PPSA94721.zip
+          path: build/ps5-native-app-boilerplate/dist/
           if-no-files-found: error
           retention-days: 14
