@@ -40,6 +40,7 @@ jobs:
           path: |
             build/Spectra
             build/Spectra Simulator
+            build/Spectra Game Store Importer
           if-no-files-found: warn
 
   build-windows:
@@ -62,7 +63,7 @@ jobs:
       - name: Configure CMake
         run: cmake -S . -B build
 
-      - name: Build both apps
+      - name: Build all apps
         run: cmake --build build --config Release --parallel 2
 
       - name: Bundle Qt and MSVC runtime dependencies
