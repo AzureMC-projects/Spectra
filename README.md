@@ -45,6 +45,10 @@ The build produces Spectra and Spectra Simulator executables. GitHub Actions bui
         ├── main.cpp
         └── simulator.cpp
 
+## PS5 platform research
+
+See [docs/ps5-homebrew-research.md](docs/ps5-homebrew-research.md) for a high-level summary of public homebrew architecture and a realistic platform plan. The PS5 target remains future work; no native PS5 build is included.
+
 ## License
 
 Spectra is released under the MIT License. See LICENSE.
