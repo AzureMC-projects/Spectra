@@ -36,7 +36,7 @@ jobs:
       - name: Bundle Qt runtime
         shell: pwsh
         run: |
-          $apps = @("Spectra.exe", "Spectra Simulator.exe")
+          $apps = @("Spectra.exe", "Spectra Simulator.exe", "Spectra Game Store Importer.exe")
           $deploy = Get-Command windeployqt.exe -ErrorAction Stop
           foreach ($app in $apps) {
             $exe = Join-Path $PWD ("build/Release/" + $app)
@@ -70,6 +70,7 @@ jobs:
         run: |
           if (!(Test-Path "build/Release/Spectra.exe")) { throw "Spectra.exe missing" }
           if (!(Test-Path "build/Release/Spectra Simulator.exe")) { throw "Spectra Simulator.exe missing" }
+          if (!(Test-Path "build/Release/Spectra Game Store Importer.exe")) { throw "Spectra Game Store Importer.exe missing" }
           if (!(Test-Path "build/Release/platforms/qwindows.dll")) { throw "Qt Windows platform plugin missing" }
           Compress-Archive -Path "build/Release/*" -DestinationPath "Spectra-Windows-v2.1.zip" -Force
           if (!(Test-Path "Spectra-Windows-v2.1.zip")) { throw "ZIP package missing" }
